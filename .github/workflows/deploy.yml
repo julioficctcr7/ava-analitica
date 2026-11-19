@@ -1,0 +1,86 @@
+name: CI/CD — DEDTE Analytics (ava-analitica)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ava-analitica
+  cancel-in-progress: false
+
+jobs:
+  build-test-deploy:
+    name: Build, Test & Deploy to GCP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_sqlite, pdo_pgsql, mbstring, xml, curl, bcmath
+          coverage: none
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Install NPM dependencies & build frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Prepare environment & run PHPUnit tests
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan test
+
+      - name: Configure SSH key for GCP VM
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.GCP_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync application files to GCP VM
+        run: |
+          rsync -az --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.env' \
+            --exclude='node_modules' \
+            --exclude='vendor' \
+            --exclude='storage' \
+            --exclude='bootstrap/cache' \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
+            ./ "${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }}:/var/www/dedte-p2/"
+
+      - name: Post-deploy Laravel & Nginx reload
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }}" << 'EOF'
+            set -euo pipefail
+            cd /var/www/dedte-p2
+            composer install --no-dev --optimize-autoloader --no-interaction
+            sudo chown -R deploy:www-data /var/www/dedte-p2
+            sudo chown -R www-data:www-data /var/www/dedte-p2/storage /var/www/dedte-p2/bootstrap/cache
+            sudo chmod -R ug+rwx /var/www/dedte-p2/storage /var/www/dedte-p2/bootstrap/cache
+            sudo -u www-data php artisan migrate --force
+            sudo -u www-data php artisan config:clear
+            sudo -u www-data php artisan config:cache
+            sudo -u www-data php artisan route:cache
+            sudo -u www-data php artisan view:cache
+            sudo systemctl reload php8.3-fpm nginx
+            curl -fsS -I https://ava-analitica.duckdns.org | head -n 5
+          EOF

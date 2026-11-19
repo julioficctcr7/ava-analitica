@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+:root {
+  --bg-page: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-sidebar: #0f172a;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --border-color: #cbd5e1;
+  --accent: #1e3a8a;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #dbeafe;
+  --radius-card: 0.75rem;
+  --font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+/* Tema 1: Adultos (Institucional Sobrio UAGRM) */
+[data-theme="adultos"] {
+  --accent: #1e3a8a;
+  --accent-hover: #172554;
+  --accent-soft: #dbeafe;
+  --bg-sidebar: #0f172a;
+  --radius-card: 0.65rem;
+}
+
+/* Tema 2: Jóvenes (Moderno Vibrante) */
+[data-theme="jovenes"] {
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-soft: #ede9fe;
+  --bg-sidebar: #1e1b4b;
+  --bg-page: #f5f3ff;
+  --radius-card: 1rem;
+}
+
+/* Tema 3: Niños (Lúdico / Amigable) */
+[data-theme="ninos"] {
+  --accent: #ea580c;
+  --accent-hover: #c2410c;
+  --accent-soft: #ffedd5;
+  --bg-sidebar: #065f46;
+  --bg-page: #fffbeb;
+  --radius-card: 1.35rem;
+  --font-family: "Comic Neue", "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+/* Modo Noche */
+[data-mode="noche"] {
+  --bg-page: #0b1120;
+  --bg-card: #111827;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --accent-soft: #1e293b;
+}
+
+/* Accesibilidad WCAG: Alto Contraste */
+[data-contrast="alto"] {
+  --bg-page: #000000 !important;
+  --bg-card: #000000 !important;
+  --bg-sidebar: #000000 !important;
+  --text-main: #ffffff !important;
+  --text-muted: #facc15 !important;
+  --border-color: #facc15 !important;
+  --accent: #facc15 !important;
+  --accent-hover: #fde047 !important;
+  --accent-soft: #1f2937 !important;
+}
+
+[data-contrast="alto"] button.btn-primary {
+  color: #000000 !important;
+  font-weight: 800;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.themed-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+}
+
+[data-contrast="alto"] .themed-card {
+  border-width: 2px;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: #ffffff;
+  border-radius: calc(var(--radius-card) * 0.65);
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-hover);
+}
+
+.themed-input {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+}
